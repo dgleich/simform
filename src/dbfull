@@ -41,6 +41,10 @@ mseq2_output?=$(outdir)data.mseq2/
 model_input?=$(mseq_output)
 model_output?=$(outdir)model
 
+train_subset?=0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60
+train_output?=$(outdir)train
+numTraincols?=16
+
 predict_input=$(exodus2seq_output)*/*part*.seq
 predict_output?=$(outdir)predict/noSVD/
 design?=
@@ -191,7 +195,22 @@ model:
 	cd ..; \
 	echo 'SVD Model Done!';\
 	echo '========================================'
+    
+.PHONY: train
 
+train:
+	@echo '========================================';\
+	echo 'SVD Modeling...';\
+	cd model; \
+	python run_full_tsqr.py --input=$(mseq2_output) \
+	--ncols=$(numTraincols) --svd=3  \
+	--hadoop=/usr/lib/hadoop --local_output=train-svd \
+        --subset=$(train_subset) \
+	--output=$(train_output) \
+        --javamem=2G --replication=1; \
+	cd ..; \
+	echo 'SVD Model Done!';\
+	echo '========================================'
 
 # create weights.txt file for predicting with SVD
 

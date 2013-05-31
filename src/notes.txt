@@ -188,7 +188,7 @@ Fix up the input list
     hadoop fs -rm
 hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/input.txt
     hadoop fs -put inputtest.txt
-hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/input.txt i
+hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/input.txt 
 
     make -f dbtest.dgleich convert
 
@@ -205,6 +205,14 @@ Store the matrix for processing myself
     cd 
 
 On my desktop
+
+    # work in the ssh shared directory
+    cd ~/remote/icme-hadoop1/simform-sisc/experiments/dbtest
+    convert_dbtest
+    
+That will save dbtest.mat into ~/scratch
+
+
 
     
 
