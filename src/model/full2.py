@@ -35,7 +35,8 @@ def starter(prog):
     output = prog.getopt('output')
     if not output:
         prog.addopt('output','%s-full-tsqr-2%s'%(matname,matext))
-    
+   
+    prog.addopt('memlimit','12g') 
     gopts.getintkey('svd', 0)
     
     gopts.save_params()

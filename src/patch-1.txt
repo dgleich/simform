@@ -1,0 +1,1 @@
+hdfs://icme-hadoop1.localdomain/user/jatempl/random_media/run2478/random_media.e

@@ -132,7 +132,7 @@ class FullTSQRRed2(dumbo.backends.common.MapRedBase):
             self.key_order.append(key)
         A = numpy.array(data)
         QR = numpy.linalg.qr(A)        
-        self.Q2 = QR[0].tolist()
+        self.Q2 = QR[0]
         self.R_final = QR[1].tolist()
         for i, row in enumerate(self.R_final):
             yield ("R_final", i), row
@@ -154,7 +154,7 @@ class FullTSQRRed2(dumbo.backends.common.MapRedBase):
         key_ind = 0
         local_Q = []
         for row in self.Q2:
-            local_Q.append(row)
+            local_Q.append(row.tolist())
             ind += 1
             if (ind == rows_to_read):
                flat_Q = [entry for row in local_Q for entry in row]

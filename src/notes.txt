@@ -66,10 +66,93 @@ Convert
 
 Add jobconf linespermap=10 to dbfull
 
-make -f runs convert timestepfile=tsteps.txt 
+make -f dbfull convert timestepfile=tsteps.txt 
 
 Time = 
 real    883m10.961s
+
+
+real    1968m22.642s
+user    2m3.234s
+sys     1m17.896s
+
+(2x replication)
+real    1211m56.694s
+
+Convert to matrix sequence files Done!
+
+
+
+We are now space constrained ...
+
+./bin/hadoop dfs -setrep -R -w 2 /user/dgleich/rm-sisc/dbfull/data.mseq2
+./bin/hadoop dfs -setrep -R -w 1 /user/dgleich/rm-sisc/dbfull/data.seq
+
+Oops, that was a REALLY bad idea as one of the disks failed.
+
+We are going to patch what's left in data.seq
+
+hadoop fsck /user/dgleich/rm-sisc/dbfull > corrupted.txt
+hadoop fsck /user/dgleich/rm-sisc/dbfull -delete | tee fsck-output.txt
+
+grep "data.seq/random_media" corrupted.txt  | \
+   perl -nle 'print "hdfs://icme-hadoop1.localdomain/user/jatempl/random_media/run$1/random_media.e" if (/random_media\/random_media([\d]*)/)' > patch-2.txt
+
+
+Model failed after full1.py completed. We were able to reset
+
+Full 1 took 4hrs, 38mins, 25sec with 40 cores.
+
+dumbo start full2.py -hadoop /usr/lib/hadoop -mat
+hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_1/R_*
+-output hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_2
+-svd 3 -nummaptasks 100 -libjar feathers.jar -jobconf
+mapred.child.java.opts="-Xmx12G" -jobconf mapred.map.max.attempts=10 -jobconf
+mapred.task.timeout=1200000 -memlimit 20g
+
+hadoop fs -copyToLocal
+hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_2/Q2/part-00000
+full-svd/Q2.txt
+python
+/home/dgleich/simform-sisc/simform/src/model/hyy-python-hadoop/examples/SequenceFileReader.py
+full-svd/Q2.txt > full-svd/Q2.txt.out
+
+hadoop fs -copyToLocal
+hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_2/U/part-00000
+full-svd/U.txt
+python
+/home/dgleich/simform-sisc/simform/src/model/hyy-python-hadoop/examples/SequenceFileReader.py
+full-svd/U.txt > full-svd/U.txt.out
+
+hadoop fs -copyToLocal
+hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_2/Sigma/part-00000
+full-svd/Sigma.txt
+python
+/home/dgleich/simform-sisc/simform/src/model/hyy-python-hadoop/examples/SequenceFileReader.py
+full-svd/Sigma.txt > full-svd/Sigma.txt.out
+
+hadoop fs -copyToLocal
+hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_2/Vt/part-00000
+full-svd/Vt.txt
+python
+/home/dgleich/simform-sisc/simform/src/model/hyy-python-hadoop/examples/SequenceFileReader.py
+full-svd/Vt.txt > full-svd/Vt.txt.out
+
+Took 1 hr 10 mins with 20 cores.
+
+dumbo start full3.py -hadoop /usr/lib/hadoop -mat
+hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_1/Q_*
+-output hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_3
+-ncols 64 -q2path full-svd/Q2.txt.out -nummaptasks 100 -libjar feathers.jar
+-jobconf mapred.child.java.opts="-Xmx2G" -jobconf dfs.replication=1 -jobconf
+mapred.map.max.attempts=10 -jobconf mapred.task.timeout=1200000
+
+
+cat Sigma.txt.out | perl -nle 'print "$1" if (/\[([\d.e+\- ]*)\]/)' > Sigma.mtxt
+cat Vt.txt.out | perl -nle 'print "$1" if (/\[([\d.e+\- ]*)\]/)' > Vt.mtxt
+
+
+
 
 
 
@@ -80,7 +163,7 @@ Tiny test
 
    mv dbtest dbtest.dgleich
 
-Add numParams?=16
+Add numParams?=64
     numExodusfiles?=16
     timesteps?=tstepstest.txt
     mr_seq2mseq2_hadoop.py -> mr_seq2mseq5_hadoop.py
@@ -107,4 +190,21 @@ hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/input.txt
     hadoop fs -put inputtest.txt
 hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/input.txt i
 
+    make -f dbtest.dgleich convert
+
+
+Store the matrix for processing myself
+
+
+    cd model
+    python dump_mseq2.py -hadoop /usr/lib/hadoop -mat rm-sisc/dbtest/data.mseq2
+    mkdir ../../../experiments/dbtest
+    hadoop fs -text /user/dgleich/rm-sisc/dbtest/data.mtxt/part-00000.deflate > ../../../experiments/dbtest/data.mtxt
+    cd ..
+    cp tstepstest.txt ../../experiments/dbtest/tsteps.txt
+    cd 
+
+On my desktop
+
+    
 

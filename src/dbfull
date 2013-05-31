@@ -22,6 +22,9 @@ timestepfile?=none
 numExodusfiles?=64
 numParas?=64
 
+patchfile?=patchfile-is-required
+patchfile_hdfs=$(outdir)/patchinput.txt
+
 inputfile=$(outdir)input.txt
 exodus2seq_output?=$(outdir)data.seq/
 
@@ -89,6 +92,32 @@ else
 	echo 'Convert exodus files to sequence files using normalized timesteps Done!'; \
 	echo '========================================'
 endif
+
+patch: mr_exodus2seq_hadoop.py simform-deploy.tar.gz $(patchfile)
+ifeq ($(timestepfile),none)
+	hadoop fs -put $(patchfile) $(patchfile_hdfs)
+	@echo '========================================';\
+	echo 'patching exodus files to sequence files...';\
+	hadoop fs -test -z $(patchfile_hdfs) || time python mr_exodus2seq_hadoop.py \
+	$(patchfile_hdfs) -r hadoop --python-archive simform-deploy.tar.gz \
+	-t $(timesteps) -d $(exodus2seq_output) --variables $(variable) --no-output \
+	--jobconf mapred.line.input.format.linespermap=10; \
+	echo 'Convert exodus files to sequence files Done!'; \
+	echo '========================================'
+else
+	hadoop fs -put $(patchfile) $(patchfile_hdfs)
+	@echo '========================================';\
+	echo 'Converting exodus files to sequence files using normalized timesteps...';\
+	test -e $(timestepfile) || echo 'The timestepfile does not exist!'; \
+	test -e $(timestepfile) && hadoop fs -test -z $(patchfile_hdfs) \
+	|| time python mr_exodus2seq_hadoop.py \
+	$(patchfile_hdfs) -r hadoop --python-archive simform-deploy.tar.gz --no-output \
+	-t $(timesteps) -d $(exodus2seq_output) --variables $(variable) \
+	--timestepfile $(timestepfile)  --file $(timestepfile)  \
+	--jobconf mapred.line.input.format.linespermap=10;  \
+	echo 'Convert exodus files to sequence files using normalized timesteps Done!'; \
+	echo '========================================'
+endif
 	
 
 var:mr_globalvar_hadoop.py
@@ -140,7 +169,9 @@ seq2mseq2:mr_seq2mseq2_hadoop.py
 	hadoop fs -test -e $(mseq2_output) || \
 	time python mr_seq2mseq4_hadoop.py $(mseq_input) -r hadoop \
 	--jobconf mapred.min.split.size=536870912 \
-	--jobconf mapred.reduce.tasks=32768 \
+	--jobconf mapred.reduce.tasks=20000 \
+        --jobconf dfs.replication=2 \
+        --jobconf mapred.reduce.slowstart.completed.maps=1 \
 	--no-output -o $(mseq2_output) --variable $(variable) --numParas $(numParas); \
 	echo 'Convert to matrix sequence files Done!';\
 	echo '========================================'

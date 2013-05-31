@@ -1,0 +1,49 @@
+Experimental design for the simform experiments
+
+We'll compute an SVD on a subset of the data, and then compare these
+training runs against a testing subset
+
+bubble_sizes = 
+1 5 9  13  17  21  25  29  33  37  41  45  49  53  57  61 -- train
+ 3 7 11  15  19  23  27  31  35  39  43  47  51  55  59   -- test
+ 
+The final validate set will be
+
+2:2:60
+
+---
+ 
+So we test at interpolation points between the training points,
+and then evaluate the error.
+
+make seq2mseq2 trainsims.txt
+
+make model
+
+make predict  
+
+make validate validsims.txt
+
+
+---- t
+
+ 
+Evaluate: 
+2 4 6 8 10 12 14 16  
+
+trainsubset
+1:4:61
+
+size = 
+1 5 9  13  17  21  25  29  33  37  41  45  49  53  57  61
+
+testsubset
+3:4:61
+
+size = 
+ 3 7 11 15 19 23 27 
+
+
+validatesubset
+
+2:2
