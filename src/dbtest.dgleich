@@ -22,6 +22,7 @@ timestepfile?=tstepstest.txt
 numExodusfiles?=16
 # keep this one so that we parse the ffset names correctly
 numParas?=64 
+numTraincols?=4
 
 
 inputfile=$(outdir)input.txt
@@ -39,6 +40,8 @@ mseq2_output?=$(outdir)data.mseq2/
 
 model_input?=$(mseq2_output)
 model_output?=$(outdir)model
+
+train_output?=$(outdir)train
 
 predict_input=$(exodus2seq_output)*/*part*.seq
 predict_output?=$(outdir)predict/noSVD/
@@ -145,6 +148,8 @@ seq2mseq2:mr_seq2mseq2_hadoop.py
 	
 file2mseq: convert seq2mseq2
 
+
+
 .PHONY: model
 model:
 	@echo '========================================';\
@@ -152,12 +157,25 @@ model:
 	cd model; \
 	python run_full_tsqr.py --input=$(model_input) \
 	--ncols=$(numExodusfiles) --svd=3 --schedule=100,100,100 \
-	--hadoop=/usr/lib/hadoop --local_output=tsqr-tmp \
+	--hadoop=/usr/lib/hadoop --local_output=svd-test-all \
 	--output=$(model_output) --replication=1; \
 	cd ..; \
 	echo 'SVD Model Done!';\
 	echo '========================================'
 
+.PHONY: train
+train:
+	@echo '========================================';\
+	echo 'SVD Modeling...';\
+	cd model; \
+	python run_full_tsqr.py --input=$(model_input) \
+	--ncols=$(numTraincols) --svd=3 --schedule=100,100,100 \
+	--hadoop=/usr/lib/hadoop --local_output=svd-test-train \
+        --subset=0,4,8,12 \
+	--output=$(train_output) --replication=1; \
+	cd ..; \
+	echo 'SVD Model Done!';\
+	echo '========================================'
 
 # create weights.txt file for predicting with SVD
 

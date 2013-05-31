@@ -96,7 +96,9 @@ class MRSeq2Mseq(MRJob):
         We want to make an array of all the values over the parameters. 
         """
         nodes = key[2] # extract the range of nodes
-        submat = [ [0. for _ in xrange(int(self.numParas))] for _ in xrange(nodes[1]-nodes[0]) ]
+        
+        # NOTE THE FOLLOWING LINE IS HARD-CODED FOR THIS SINGLE EXAMPLE
+        submat = [ [0. for _ in xrange(int(16))] for _ in xrange(nodes[1]-nodes[0]) ]
         
         print >>sys.stderr, "reporter:status:loading values"
         for val in values:
