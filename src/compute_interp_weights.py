@@ -65,5 +65,5 @@ if __name__ == "__main__":
          W[i,1:R+1] = Vinterp[i,0:R]*Sig[0:R]
          W[i,R+1:] = Sig[R:]
       
-   np.savetxt('weights.txt',W)
+   np.savetxt(sys.stdout,W)
 

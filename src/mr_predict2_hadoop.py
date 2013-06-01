@@ -69,9 +69,9 @@ class MRPredictwithSVD(MRJob):
         
         for i, weight in enumerate(W):
             K = weight[0] # number of left singular vectors to compute the interpolation
-            val = 0
-            err = 0
             for k in range(numNodes):
+                val = 0.
+                err = 0.
                 for j in range(K):
                     val += value[k][j]*weight[j+1]
                     #print >>sys.stderr, j
