@@ -104,11 +104,11 @@ Model failed after full1.py completed. We were able to reset
 Full 1 took 4hrs, 38mins, 25sec with 40 cores.
 
 dumbo start full2.py -hadoop /usr/lib/hadoop -mat
-hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_1/R_*
--output hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_2
--svd 3 -nummaptasks 100 -libjar feathers.jar -jobconf
-mapred.child.java.opts="-Xmx12G" -jobconf mapred.map.max.attempts=10 -jobconf
-mapred.task.timeout=1200000 -memlimit 20g
+  hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_1/R_* \
+  -output hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_2 \
+  -svd 3 -nummaptasks 100 -libjar feathers.jar -jobconf \
+  mapred.child.java.opts="-Xmx12G" -jobconf mapred.map.max.attempts=10 \
+  -jobconf mapred.task.timeout=1200000 -memlimit 20g
 
 hadoop fs -copyToLocal
 hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/model_2/Q2/part-00000
@@ -191,10 +191,9 @@ hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/input.txt
 hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/input.txt 
 
     make -f dbtest.dgleich convert
-
+    make -f dbtest.dgleich seq2mseq2
 
 Store the matrix for processing myself
-
 
     cd model
     python dump_mseq2.py -hadoop /usr/lib/hadoop -mat rm-sisc/dbtest/data.mseq2
@@ -210,9 +209,66 @@ On my desktop
     cd ~/remote/icme-hadoop1/simform-sisc/experiments/dbtest
     convert_dbtest
     
-That will save dbtest.mat into ~/scratch
+Then we can use
 
-
-
+    split_test2.m to generate true errors    
     
+That will save dbtest.mat into ~/scratch we can use it to verify the SVD
 
+    make -f dbtest.dgleich model # compute the full SVD
+    make -f dbtest.dgleich train # compute an SVD on a training subset
+    
+Let's do some prediction! The code paul wrote does:
+python compute_interp_weights.py Vtfile Sigmafile designpoints interppoints > dbtest-weights.txt
+
+dbtest parameter set    
+1 5 9 13 17 21 25 29 33 37 41 45 49 53 57 61
+trainset design
+1 17 33 49
+testset design
+9 25 41     
+
+Let's make sure it's right
+
+    cat dbtest-trainset-design.txt    
+    cat dbtest-testset-design.txt
+
+Now let's use Paul's script to compute things!
+
+    python compute_interp_weights.py model/svd-test-train/Vt.txt.out \
+      model/svd-test-train/Sigma.txt.out \
+      dbtest-trainset-design.txt  dbtest-testset-design.txt R 4 > dbtest-weights.txt
+      
+      
+
+python mr_predict2_hadoop.py \
+  hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/train_3/p* \
+  -r hadoop --no-output -o rm-sisc/dbtest/predict \
+  --weights=dbtest-weights.txt --file dbtest-weights.txt \
+  --subset=9,25,41
+
+
+
+python mr_error_hadoop.py \
+hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/data.seq/random_media/random_media*.seq \
+hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/predict/p* \
+-r hadoop --no-output -o rm-sisc/dbtest/error --numParas 64  --variable TEMP \
+--subset=9,25,41
+  
+Summary of notes while working on this. The initial SVD was wrong due to the
+'uotp' bug in the svd code. So I fixed that. Also 
+
+I validated this by making sure the error was the same against the ones 
+computed in Matlab.
+
+    # make sure it's a REAL tab after the 9 (in linux, <ctrl-v> <TAB>)
+    dumbo cat rm-sisc/dbtest/error/part-* -hadoop /usr/lib/hadoop | \
+        grep "9 " | cut -f 4 
+
+One of the key problems was that the first elements of the predicted
+scores was not 1000, which it's fixed to in all of the simulations, so this
+indicates a bug.
+
+    dumbo cat rm-sisc/dbtest/predict/part-00007 -hadoop /usr/lib/hadoop | less
+    
+    
