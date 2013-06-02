@@ -3,36 +3,55 @@ import numpy as np
 from StringIO import StringIO
 import pdb
    
+def parse_matrix_txt(mpath):
+    f = open(mpath, 'r')
+    data = []
+    for line in f:
+        ind = line.rfind(')')
+        if ind != -1:
+            line = line[ind+1:]
+        line = line.strip().rstrip().lstrip('[').rstrip(']')
+        line2 = line.split(',')
+        if len(line2) == 1:
+            line2 = line.split()
+        line2 = [float(v) for v in line2]
+        data.append(line2)
+
+    f.close()
+    return data
+
 
 if __name__ == "__main__":
+   V = np.array(parse_matrix_txt(sys.argv[1])).transpose()
+   #Vlist = []
+   #Vfile = file(sys.argv[1])
+   #for line in Vfile:
+   #   i0 = line.find('(')
+   #   i1 = line.find(')')
+   #   i = int(line[i0+1:i1])
+
+   #   i0 = line.find('[')
+   #   i1 = line.find(']')
+   #   v = np.loadtxt(StringIO(line[i0+1:i1]))
+   #   Vlist.append(v)
+   #V = np.asarray(Vlist).transpose()
+
+   #Siglist = []
+   #Sigfile = file(sys.argv[2])
+   #for line in Sigfile:
+   #   i0 = line.find('(')
+   #   i1 = line.find(')')
+   #   i = int(line[i0+1:i1])
+   #
+   #   i0 = line.find('[')
+   #   i1 = line.find(']')
+   #   sig = np.loadtxt(StringIO(line[i0+1:i1]))
+   #   sigind = np.nonzero(sig>0)[0][0]
+   #   Siglist.append(sig[sigind])
+   #Sig = np.asarray(Siglist)
    
-   Vlist = []
-   Vfile = file(sys.argv[1])
-   for line in Vfile:
-      i0 = line.find('(')
-      i1 = line.find(')')
-      i = int(line[i0+1:i1])
-
-      i0 = line.find('[')
-      i1 = line.find(']')
-      v = np.loadtxt(StringIO(line[i0+1:i1]))
-      Vlist.append(v)
-   V = np.asarray(Vlist).transpose()
-
-   Siglist = []
-   Sigfile = file(sys.argv[2])
-   for line in Sigfile:
-      i0 = line.find('(')
-      i1 = line.find(')')
-      i = int(line[i0+1:i1])
-
-      i0 = line.find('[')
-      i1 = line.find(']')
-      sig = np.loadtxt(StringIO(line[i0+1:i1]))
-      sigind = np.nonzero(sig>0)[0][0]
-      Siglist.append(sig[sigind])
-   Sig = np.asarray(Siglist)
-
+   Sig = np.diag(np.array(parse_matrix_txt(sys.argv[2])))
+   
    design_points = np.loadtxt(sys.argv[3])
    ndp = design_points.shape[0]
    interp_points = np.loadtxt(sys.argv[4])

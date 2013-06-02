@@ -161,7 +161,7 @@ if svd_opt == 2 or svd_opt == 3:
   copy_and_parse_locally(out2+'/Vt', out_file('Vt.txt'))
   
   if svd_opt==3:
-    upot = '-upath '+small_U_file+'.out'
+    uopt = '-upath '+small_U_file+'.out'
 
 in3 = out1 + '/Q_*'
 cm.run_dumbo('full3.py', hadoop, ['-mat ' + in3, '-output ' + out + '_3',

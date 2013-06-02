@@ -140,11 +140,11 @@ class FullTSQRRed2(dumbo.backends.common.MapRedBase):
             U, S, Vt = numpy.linalg.svd(self.R_final)
             S = numpy.diag(S)
             for i, row in enumerate(U):
-                yield ("U", i), row
+                yield ("U", i), row.tolist()
             for i, row in enumerate(S):
-                yield ("Sigma", i), row
+                yield ("Sigma", i), row.tolist()
             for i, row in enumerate(Vt):
-                yield ("Vt", i), row
+                yield ("Vt", i), row.tolist()
 
     def close_Q(self):
         num_rows = len(self.Q2)
