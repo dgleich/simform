@@ -151,4 +151,25 @@ mapred.map.max.attempts=10 -jobconf mapred.task.timeout=1200000
 cat Sigma.txt.out | perl -nle 'print "$1" if (/\[([\d.e+\- ]*)\]/)' > Sigma.mtxt
 cat Vt.txt.out | perl -nle 'print "$1" if (/\[([\d.e+\- ]*)\]/)' > Vt.mtxt
 
+Create the training model
 
+    make -f dbtest train
+
+Create the testing interpolation points
+
+    bash make_sisc_train_weights.txt      
+
+
+python mr_predict2_hadoop.py \
+  hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/train_3/p* \
+  -r hadoop --no-output -o rm-sisc/dbfull/predict \
+  --weights=sisc-train-weights-16.txt --file sisc-train-weights-16.txt \
+  --subset=3,7,11,15,19,23,27,31,35,39,43,47,51,55,59 
+
+python mr_error_hadoop.py \
+hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/data.seq/random_media/random_media*.seq \
+hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/predict/p* \
+-r hadoop --no-output -o rm-sisc/dbfull/error --numParas 64  --variable TEMP \
+--jobconf mapred.reduce.tasks=10000 \
+--jobconf mapred.reduce.slowstart.completed.maps=1 \
+--subset=3,7,11,15,19,23,27,31,35,39,43,47,51,55,59 
