@@ -15,6 +15,7 @@ import os
 import full
 
 # 2013-05-24: dgleich - Added subset option
+# 2013-06-05: dgleich - Added saveA option
 
 # create the global options structure
 gopts = util.GlobalOptions()
@@ -26,7 +27,8 @@ def runner(job):
     else:
         subset = [int(_) for _ in subset.split(',')]
         
-    mapper = full.FullTSQRMap1(subset=subset)
+    saveA = gopts.getintkey('saveA')
+    mapper = full.FullTSQRMap1(subset=subset,save_A=bool(saveA))
         
     reducer = mrmc.ID_REDUCER
     job.additer(mapper=mapper,reducer=reducer,opts=[('numreducetasks',str(0))])
@@ -43,6 +45,8 @@ def starter(prog):
         # check parsing
         subset = [int(_) for _ in subset.split(',')]
         # then ignore
+
+    save_A = gopts.getintkey('saveA',0)
 
     matname,matext = os.path.splitext(mat)
     output = prog.getopt('output')

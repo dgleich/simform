@@ -117,4 +117,54 @@ indicates a bug.
 
     dumbo cat rm-sisc/dbtest/predict/part-00007 -hadoop /usr/lib/hadoop | less
     
+---
+
+Alright, it turns out it was too slow to compute all the predictions independently.
+
+We integrated them all    
     
+    cd model
+    python run_full_tsqr_cv.py --parameter-file=../dbtest-params.txt \
+        --train-subset=0,4,8,12 --test-subset=2,6,10 \
+        --replication=1 --javamem=7g \
+        --input=rm-sisc/dbtest/data.mseq2/ \
+        --hadoop=/usr/lib/hadoop \
+        --local_output=svd-test-train \
+        --output=rm-sisc/dbtest/traincv 
+        
+        
+    Individual commands
+    
+    dumbo start full1.py -hadoop /usr/lib/hadoop -mat rm-sisc/dbtest/data.mseq2/ \
+     -output rm-sisc/dbtest/traincv_1 -subset 0,4,8,12 -saveA 1 \
+     -libjar feathers.jar  -jobconf dfs.replication=1 \
+     -jobconf mapred.map.max.attempts=10 -jobconf mapred.task.timeout=1200000
+     
+    dumbo start full2.py -hadoop /usr/lib/hadoop -mat rm-sisc/dbtest/traincv_1/R_* -output rm-sisc/dbtest/traincv_2 -svd 3 -libjar feathers.jar  -jobconf mapred.map.max.attempts=10 -jobconf mapred.task.timeout=1200000
+    
+    hadoop fs -copyToLocal rm-sisc/dbtest/traincv_2/Q2/part-00000 svd-test-train/Q2.txt
+    python /home/dgleich/simform-sisc/simform/src/model/hyy-python-hadoop/examples/SequenceFileReader.py svd-test-train/Q2.txt > svd-test-train/Q2.txt.out
+
+    hadoop fs -copyToLocal rm-sisc/dbtest/traincv_2/U/part-00000 svd-test-train/U.txt
+    python /home/dgleich/simform-sisc/simform/src/model/hyy-python-hadoop/examples/SequenceFileReader.py svd-test-train/U.txt > svd-test-train/U.txt.out
+    
+    hadoop fs -copyToLocal rm-sisc/dbtest/traincv_2/Sigma/part-00000 svd-test-train/Sigma.txt
+    python /home/dgleich/simform-sisc/simform/src/model/hyy-python-hadoop/examples/SequenceFileReader.py svd-test-train/Sigma.txt > svd-test-train/Sigma.txt.out
+    
+    hadoop fs -copyToLocal rm-sisc/dbtest/traincv_2/Sigma/part-00000 svd-test-train/Vt.txt
+    python /home/dgleich/simform-sisc/simform/src/model/hyy-python-hadoop/examples/SequenceFileReader.py svd-test-train/Vt.txt > svd-test-train/Vt.txt.out
+    
+    dumbo start full3cv.py -hadoop /usr/lib/hadoop -mat rm-sisc/dbtest/traincv_1/Q_* \
+        -output rm-sisc/dbtest/traincv_3 -q2path svd-test-train/Q2.txt.out \
+        -libjar feathers.jar \
+        -subset 0,4,8,12 -test_subset 2,6,10 \
+        -ppath ../dbtest-params.txt -upath svd-test-train/U.txt.out \
+        -sigmapath svd-test-train/Sigma.txt.out -vtpath svd-test-train/Vt.txt.out  \
+        -jobconf dfs.replication=1 -jobconf mapred.map.max.attempts=10 \
+        -jobconf mapred.task.timeout=1200000 \
+        -jobconf mapred.child.java.opts="-Xmx7g"
+    
+    dumbo cat rm-sisc/dbtest/traincv_3/part-* -hadoop /usr/lib/hadoop > errs.txt
+    
+    cat errs.txt | python parse_errors.py
+        
