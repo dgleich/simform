@@ -466,11 +466,14 @@ class FullTSQRROMCV(dumbo.backends.common.MapRedBase):
         
         
         errs = []
+        norms = []
         for R in self.Winterp:
             interpblock = numpy.dot(block,self.Winterp[R])
             exactblock = Ablock[:,self.test_subset]
-            err = numpy.sum(numpy.square(interpblock-exactblock),0).tolist()
+            err = numpy.sum(numpy.square(numpy.mat(interpblock-exactblock)),0).tolist()
+            norm = numpy.sum(numpy.array(exactblock)**2,0).tolist()
             err.insert(0, R)
+            err.append(norm)
             errs.append(err)
         
         yield key, errs
