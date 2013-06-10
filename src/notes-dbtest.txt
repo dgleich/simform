@@ -168,3 +168,15 @@ We integrated them all
     
     cat errs.txt | python parse_errors.py
         
+Alright, now we want to actually output some of the error values
+
+    dumbo start full3cv.py -hadoop /usr/lib/hadoop -mat rm-sisc/dbtest/traincv_1/Q_* \
+        -output rm-sisc/dbtest/traincv_3 -q2path svd-test-train/Q2.txt.out \
+        -libjar feathers.jar \
+        -subset 0,4,8,12 -test_subset 6 \
+        -taubar 0.05 -realization 1 \
+        -ppath ../dbtest-params.txt -upath svd-test-train/U.txt.out \
+        -sigmapath svd-test-train/Sigma.txt.out -vtpath svd-test-train/Vt.txt.out  \
+        -jobconf dfs.replication=1 -jobconf mapred.map.max.attempts=10 \
+        -jobconf mapred.task.timeout=1200000 \
+        -jobconf mapred.child.java.opts="-Xmx7g"
