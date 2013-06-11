@@ -188,14 +188,17 @@ class FullTSSVDPredictAndComputeError(dumbo.backends.common.MapRedBase):
         
         R,W = self.Winterp
         
-        interpblock = numpy.dot(block,W)
-        exactblock = numpy.array(Ablock[:,self.predict_column])
-        varblock = numpy.dot(numpy.array(block[:,R:])**2,(self.sig_data[R:])**2)
+        interpblock = numpy.dot(block,W).squeeze()
+        exactblock = numpy.array(Ablock[:,self.predict_column]).squeeze()
+        varblock = numpy.sqrt(numpy.dot(numpy.array(block[:,R:])**2,(self.sig_data[R:])**2).squeeze())
         err = numpy.array(interpblock-exactblock)
+        exact = exactblock
         
         c = self.predict_column[0]
         
-        yield (c,t), (noderange, interpblock, varblock, err)
+        yield (c,t), (noderange, 
+            interpblock, varblock, err, 
+            exactblock.squeeze())
 
     def close(self):
         if len(self.Q1_data) == 0:
@@ -256,11 +259,15 @@ class FullTSSVDPredictAndComputeError(dumbo.backends.common.MapRedBase):
             mat = numpy.mat(mat)
             Amat = numpy.reshape(mat, (num_entries / ncolsA , ncolsA))
             
+            print >> sys.stderr, "realization = ", self.realization
+            
             usekey = False
             for rowkey in keys:
                 if isinstance(rowkey, tuple) and rowkey[0] == 'multi':
                     # we are going to optimize here
                     # origkey = (r,t,rowkeys)
+                    
+                    print >>sys.stderr, "key = ", rowkey
                     origkey = rowkey[2] # extract the original key
                     r = origkey[0] 
                     
@@ -287,7 +294,7 @@ class FullTSSVDPredictAndComputeError(dumbo.backends.common.MapRedBase):
 
 def aggregate_simulation(key, values):
     """ key = (simno, time-step)
-    values = [(noderange, values, var, erros)]
+    values = [(noderange, values, var, errors, exactsol)]
     
             The reduce groups all values and variances from a single time-step of
         a simulation via their node id so that we don't have to store the
@@ -306,6 +313,7 @@ def aggregate_simulation(key, values):
     interpval = numpy.zeros ( nnodes )
     interpvar = numpy.zeros ( nnodes )
     interperr = numpy.zeros ( nnodes )
+    interpsol = numpy.zeros ( nnodes )
 
     for val in myvals:
         # val = (noderange, interpval in range, interperr in range)
@@ -313,7 +321,11 @@ def aggregate_simulation(key, values):
         interpval[noderange[0]:noderange[1]] = val[1]
         interpvar[noderange[0]:noderange[1]] = val[2]
         interperr[noderange[0]:noderange[1]] = val[3]
-    yield key, (interpval, interpvar, interperr)
+        interpsol[noderange[0]:noderange[1]] = val[4]
+    
+    yield key, (interpval, interpvar, interperr, interpsol)
+                
+    print >>sys.stderr, "done with key"
 
 
 # create the global options structure
@@ -331,7 +343,7 @@ def runner(job):
     ppath = gopts.getstrkey('ppath')
     sigmapath = gopts.getstrkey('sigmapath')
     vtpath = gopts.getstrkey('vtpath')
-    realno = gopts.getstrkey('realization')
+    realno = gopts.getintkey('realization')
     taubar = float(gopts.getstrkey('taubar'))
             
     mapper = FullTSSVDPredictAndComputeError(q2path, upath, ppath, subset, predict_column, 
