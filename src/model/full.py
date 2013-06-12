@@ -293,7 +293,13 @@ class FullTSQRMap3(dumbo.backends.common.MapRedBase):
             # key is a mapper id
             # value stores the local Q matrix 
             #   and the list of keys
-            matrix, keys = val
+            
+            if len(val) == 2:
+                matrix, keys = val
+            else:
+                # handle the larger case
+                ncolsQ,matrix,ncolsA,matAflat,keys = val
+            
             num_entries = len(matrix) / 8
             assert (num_entries % self.ncols == 0)
             mat = list(struct.unpack('d'*num_entries, matrix))
