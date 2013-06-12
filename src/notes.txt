@@ -218,6 +218,15 @@ I did to fix it.
         -upath train-svd-cv/U.txt.out -sigmapath train-svd-cv/Sigma.txt.out -vtpath train-svd-cv/Vt.txt.out \
         -jobconf mapred.child.java.opts="-Xmx7g" -jobconf dfs.replication=1 \
         -jobconf mapred.map.max.attempts=10 -jobconf mapred.task.timeout=1200000
+    
+        
+    dumbo start full3cv.py -hadoop /usr/lib/hadoop -mat rm-sisc/dbfull/traincv_1/Q_* \
+        -output rm-sisc/dbfull/traincv_3 -q2path train-svd-cv/Q2.txt.out \
+        -libjar feathers.jar -subset 0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60 \
+        -test_subset 2,6,10,14,18,22,26,30,34,38,42,46,50,54,58 -ppath ../sisc-params.txt \
+        -upath train-svd-cv/U.txt.out -sigmapath train-svd-cv/Sigma.txt.out -vtpath train-svd-cv/Vt.txt.out \
+        -jobconf mapred.child.java.opts="-Xmx7g" -jobconf dfs.replication=1 \
+        -jobconf mapred.map.max.attempts=10 -jobconf mapred.task.timeout=1200000        
 
     # this proved to be much faster. dumbo cat part-* does a dumptb for each individual file! ACK!
     
@@ -255,3 +264,32 @@ Look at one solution with high error
     Predict, get error and variance
     
     
+----
+
+    We changed the study
+    
+    
+    dumbo start full3.py -hadoop /usr/lib/hadoop -mat rm-sisc/dbfull/traincv_1/Q_* \
+        -output rm-sisc/dbfull/traincv_fullerr -q2path train-svd-cv/Q2.txt.out \
+        -libjar feathers.jar -subset 0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60 \
+        -test_subset 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47,49,51,53,55,57,59,61 \
+         -ppath ../sisc-params.txt \
+        -upath train-svd-cv/U.txt.out -sigmapath train-svd-cv/Sigma.txt.out -vtpath train-svd-cv/Vt.txt.out \
+        -jobconf mapred.child.java.opts="-Xmx7g" -jobconf dfs.replication=1 \
+        -jobconf mapred.map.max.attempts=10 -jobconf mapred.task.timeout=1200000     
+        
+        
+----
+
+    Paul also wants the farfaces for the ROM, so let's compute U and then
+    extract them from U.
+    
+    dumbo start full3.py -hadoop /usr/lib/hadoop 
+        -mat rm-sisc/dbfull/traincv_1/Q_* \
+        -output rm-sisc/dbfull/traincv_U \
+        -ncols 16 -q2path train-svd-cv/Q2.txt.out \
+        -upath train-svd-cv/U.txt.out \
+        -libjar feathers.jar \
+        -jobconf mapred.child.java.opts="-Xmx6g" -jobconf dfs.replication=1 \
+        -jobconf mapred.map.max.attempts=10 -jobconf mapred.task.timeout=1200000
+        
