@@ -188,15 +188,45 @@ Now let's save them as exodus files
     hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/traincv_prederr/part-* \
     -r hadoop --jobconf mapred.reduce.tasks=1 \
     --no-output --python-archive simform-deploy.tar.gz \
-    -o mytest \
     --indir hdfs://icme-hadoop1.localdomain/user/jatempl/random_media/run1/ \
     --outdir hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/subdir \
     --outputname train-prederr --variable TEMP 
     
 
+Copy down to my laptop
 
-python mr_predict2_hadoop.py \
-  hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/train_3/p* \
-  -r hadoop --no-output -o rm-sisc/dbtest/predict \
-  --weights=dbtest-weights.txt --file dbtest-weights.txt \
-  --subset=9,25,41
+ssh -C -c arcfour icme-hadoop1.stanford.edu hadoop fs -cat /user/dgleich/rm-sisc/dbtest/subdir/train-prederr6.e > train-prederr6.e
+
+After checking against matlab, I don't think these are correct.
+It seems like Paul computes the interpolants differently in Matlab.
+
+
+---
+
+    Paul also wants the farfaces for the ROM, so let's compute U and then
+    extract them from U.
+    
+    dumbo start full3.py -hadoop /usr/lib/hadoop  \
+        -mat rm-sisc/dbtest/traincv_1/Q_* \
+        -output rm-sisc/dbtest/traincv_U \
+        -ncols 4 -q2path svd-test-train/Q2.txt.out \
+        -upath svd-test-train/U.txt.out \
+        -libjar feathers.jar \
+        -jobconf mapred.child.java.opts="-Xmx6g" -jobconf dfs.replication=1 \
+        -jobconf mapred.map.max.attempts=10 -jobconf mapred.task.timeout=1200000
+
+The first step in doing the farfaces is to determine which points
+correspond to the farface.
+
+See experiments/farfield/farface_points.m to get the file farface_subset.txt
+
+python mr_mseq2subset.py \
+  -r hadoop \
+  hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/traincv_U/part-* \
+  -o hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/traincv_U_farface \
+  --subset ../../experiments/farfield/farface_subset.txt \
+  --timestep 2 \
+  --no-output 
+  
+Now dump the file as text
+  
