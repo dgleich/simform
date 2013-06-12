@@ -278,6 +278,14 @@ Look at one solution with high error
         -jobconf mapred.child.java.opts="-Xmx7g" -jobconf dfs.replication=1 \
         -jobconf mapred.map.max.attempts=10 -jobconf mapred.task.timeout=1200000     
         
+  
+dumbo start catall.py -input rm-sisc/dbfull/traincv_fullerr -output
+rm-sisc/dbfull/traincv_fullerrjoin \
+ -jobconf dfs.replication=1 -overwrite yes
+ 
+dumbo cat rm-sisc/dbfull/traincv_fullerrjoin/part-* -hadoop /usr/lib/hadoop |
+python parse_errors.py > train-svd-cv/errs_all.txt        
+
         
 ----
 
