@@ -1,5 +1,6 @@
 """
-MapReduce job to compute global variance of a series of simulation runs for all node space.
+THIS FUNCTION IS VERY SPECIAL PURPOSE, IT"S ONLY FOR THE SMALL SUBSET
+OF DBTEST
 
 Example:
 
