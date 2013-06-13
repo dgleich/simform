@@ -300,4 +300,19 @@ python parse_errors.py > train-svd-cv/errs_all.txt
         -libjar feathers.jar \
         -jobconf mapred.child.java.opts="-Xmx6g" -jobconf dfs.replication=1 \
         -jobconf mapred.map.max.attempts=10 -jobconf mapred.task.timeout=1200000
-        
+       
+
+Then build the subset
+
+python mr_mseq2subset.py \
+  -r hadoop hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/traincv_U/part-* \
+  -o hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/traincv_U_farface \
+  --subset farface_subset.txt \
+  --timestep 8 \
+  --no-output 
+
+Finally, blast it back to the disk. (And then copy it whereever it goes. There
+is a script to post-process this file into a Matlab file that Paul uses.)
+
+dumbo start cat rm-sisc/dbfull/traincv_U_farface > model/train-svd-cv/U_farface.txt
+ 
