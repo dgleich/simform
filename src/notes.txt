@@ -277,15 +277,14 @@ Look at one solution with high error
         -upath train-svd-cv/U.txt.out -sigmapath train-svd-cv/Sigma.txt.out -vtpath train-svd-cv/Vt.txt.out \
         -jobconf mapred.child.java.opts="-Xmx7g" -jobconf dfs.replication=1 \
         -jobconf mapred.map.max.attempts=10 -jobconf mapred.task.timeout=1200000     
-        
   
-dumbo start catall.py -input rm-sisc/dbfull/traincv_fullerr -output
-rm-sisc/dbfull/traincv_fullerrjoin \
+
+Concatenate the erros so we can dump them.     
+  
+dumbo start catall.py -input rm-sisc/dbfull/traincv_fullerr -output rm-sisc/dbfull/traincv_fullerrjoin \
  -jobconf dfs.replication=1 -overwrite yes
  
-dumbo cat rm-sisc/dbfull/traincv_fullerrjoin/part-* -hadoop /usr/lib/hadoop |
-python parse_errors.py > train-svd-cv/errs_all.txt        
-
+dumbo cat rm-sisc/dbfull/traincv_fullerrjoin/part-* -hadoop /usr/lib/hadoop | python parse_errors.py > train-svd-cv/errs_all.txt       
         
 ----
 
@@ -316,3 +315,89 @@ is a script to post-process this file into a Matlab file that Paul uses.)
 
 dumbo start cat rm-sisc/dbfull/traincv_U_farface > model/train-svd-cv/U_farface.txt
  
+----
+
+
+Initial notes on getting full errors. This was before I realized Paul didn't 
+want to use the 32 basis training set and wanted to stick with the 16 basis set.
+Okay :-)
+
+    hadoop fs -copyToLocal rm-sisc/dbfull/testcv_2/Q2/part-00000 test-svd-cv/Q2.txt
+    python /home/dgleich/simform-sisc/simform/src/model/hyy-python-hadoop/examples/SequenceFileReader.py test-svd-cv/Q2.txt > test-svd-cv/Q2.txt.out
+
+    dumbo start full3_output_error.py -hadoop /usr/lib/hadoop -mat rm-sisc/dbfull/testcv_1/Q_* \
+        -output rm-sisc/dbfull/testcv_prederr_9 -q2path test-svd-cv/Q2.txt.out \
+        -libjar feathers.jar \
+        -subset 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62 \
+        -predict_column 9 \
+        -taubar 0.55 -realization 1 \
+        -ppath ../sisc-params.txt -upath test-svd-cv/U.txt.out \
+        -sigmapath test-svd-cv/Sigma.txt.out -vtpath test-svd-cv/Vt.txt.out  \
+        -jobconf dfs.replication=1 \
+        -jobconf mapred.task.timeout=1200000 \
+        -jobconf mapred.child.java.opts="-Xmx7g"
+
+    dumbo start full3_output_error.py -hadoop /usr/lib/hadoop -mat rm-sisc/dbfull/testcv_1/Q_* \
+        -output rm-sisc/dbfull/testcv_prederr_49 -q2path test-svd-cv/Q2.txt.out \
+        -libjar feathers.jar \
+        -subset 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62 \
+        -predict_column 49 \
+        -taubar 0.55 -realization 1 \
+        -ppath ../sisc-params.txt -upath test-svd-cv/U.txt.out \
+        -sigmapath test-svd-cv/Sigma.txt.out -vtpath test-svd-cv/Vt.txt.out  \
+        -jobconf dfs.replication=1 \
+        -jobconf mapred.task.timeout=1200000 \
+        -jobconf mapred.child.java.opts="-Xmx7g"
+
+Now let's save them as exodus files        
+
+    python mr_outputexoduspredictionerror_hadoop.py \
+    hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/traincv_prederr/part-* \
+    -r hadoop --jobconf mapred.reduce.tasks=1 \
+    --no-output --python-archive simform-deploy.tar.gz \
+    --indir hdfs://icme-hadoop1.localdomain/user/jatempl/random_media/run1/ \
+    --outdir hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbtest/subdir \
+    --outputname train-prederr --variable TEMP 
+    
+So let's do this again... 
+
+
+    dumbo start full3_output_error.py -hadoop /usr/lib/hadoop -mat rm-sisc/dbfull/traincv_1/Q_* \
+        -output rm-sisc/dbfull/traincv_prederr_9 -q2path train-svd-cv/Q2.txt.out \
+        -libjar feathers.jar \
+        -subset 0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60 \
+        -predict_column 9 \
+        -taubar 0.55 -realization 1 \
+        -ppath ../sisc-params.txt -upath train-svd-cv/U.txt.out \
+        -sigmapath train-svd-cv/Sigma.txt.out -vtpath train-svd-cv/Vt.txt.out  \
+        -jobconf dfs.replication=1 \
+        -jobconf mapred.task.timeout=1200000 \
+        -jobconf mapred.child.java.opts="-Xmx7g"
+
+    dumbo start full3_output_error.py -hadoop /usr/lib/hadoop -mat rm-sisc/dbfull/traincv_1/Q_* \
+        -output rm-sisc/dbfull/traincv_prederr_49 -q2path train-svd-cv/Q2.txt.out \
+        -libjar feathers.jar \
+        -subset 0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60 \
+        -predict_column 49 \
+        -taubar 0.55 -realization 1 \
+        -ppath ../sisc-params.txt -upath train-svd-cv/U.txt.out \
+        -sigmapath train-svd-cv/Sigma.txt.out -vtpath train-svd-cv/Vt.txt.out  \
+        -jobconf dfs.replication=1 \
+        -jobconf mapred.task.timeout=1200000 \
+        -jobconf mapred.child.java.opts="-Xmx7g"
+
+    python mr_outputexoduspredictionerror_hadoop.py \
+    hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/traincv_prederr_9/part-* \
+    -r hadoop --jobconf mapred.reduce.tasks=1 \
+    --no-output --python-archive simform-deploy.tar.gz \
+    --indir hdfs://icme-hadoop1.localdomain/user/jatempl/random_media/run1/ \
+    --outdir hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/prederr \
+    --outputname train-prederr --variable TEMP 
+
+    python mr_outputexoduspredictionerror_hadoop.py \
+    hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/traincv_prederr_49/part-* \
+    -r hadoop --jobconf mapred.reduce.tasks=1 \
+    --no-output --python-archive simform-deploy.tar.gz \
+    --indir hdfs://icme-hadoop1.localdomain/user/jatempl/random_media/run1/ \
+    --outdir hdfs://icme-hadoop1.localdomain/user/dgleich/rm-sisc/dbfull/prederr \
+    --outputname train-prederr --variable TEMP 

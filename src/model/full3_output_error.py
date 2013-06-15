@@ -130,7 +130,6 @@ class FullTSSVDPredictAndComputeError(dumbo.backends.common.MapRedBase):
             
         assert len(interp_points) == 1
         W = np.zeros((1,ndp))
-        
         taubar = self.taubar
         
         # customize on the singleton case for prediction
@@ -141,6 +140,7 @@ class FullTSSVDPredictAndComputeError(dumbo.backends.common.MapRedBase):
         R = int(np.sum(Tau[ind,:]<taubar))
         W[i,0:R] = Vinterp[i,0:R]*Sig[0:R]
         W[i,R+1:] = 0.
+        print >>sys.stderr, "weights: ", W
         
         print >>sys.stderr, "(R,taubar) at point %f = (%i,%18g)"%(p, R, taubar)
         

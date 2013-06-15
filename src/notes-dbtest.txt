@@ -200,6 +200,19 @@ ssh -C -c arcfour icme-hadoop1.stanford.edu hadoop fs -cat /user/dgleich/rm-sisc
 After checking against matlab, I don't think these are correct.
 It seems like Paul computes the interpolants differently in Matlab.
 
+Nope, that isn't it!  I verfied that the w vector for interpolation 
+was the same in both case. That means U must be different ... ick, that's
+bad.
+
+I wrote a script to dump down everything
+
+    hadoop fs -get rm-sisc/dbtest/traincv_prederr/part-* dbtest-prederr.seq
+    python prederr_dump.py dbtest-prederr.seq > dbtest-prederr.txt
+
+scp -c arcfour icme-hadoop1.stanford.edu:~/simform-sisc/simform/src/model/dbtest-prederr.txt
+
+Okay, after checking in detail, it turns out the data was correct, good!
+See the matlab script pred_var_err.m in dbtest
 
 ---
 
